@@ -1,0 +1,39 @@
+name: 'CI'
+
+on: 
+  pull_request:
+    branches:
+      - main
+    types: [ opened, closed ]
+    
+jobs:
+  build:
+    if: ${{ github.event.pull_request.state == 'open' || github.event.pull_request.merged }}
+    runs-on: 'ubuntu-latest'
+    
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Setup .NET NuGet dependency cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('lib/MyLibrary/MyLibrary.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget
+      - name: Restore .NET dependencies
+        run: dotnet restore
+      - name: Build .NET project
+        run: dotnet build --no-restore
+      - name: Test .NET project
+        run: dotnet test --no-build --no-restore --logger "trx;LogFilename=test-results.trx" --results-directory="./TestResults"
+      - name: Publish test results
+        uses: actions/upload-artifact@v4.3.1
+        if: success() || failure()
+        with:
+          name: test-results
+          path: ./TestResults/

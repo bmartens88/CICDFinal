@@ -1,0 +1,25 @@
+name: 'Test Report'
+
+on:
+  workflow_run: 
+    workflows: ['CI']
+    types:
+      - completed
+        
+jobs:
+  report:
+    runs-on: 'ubuntu-latest'
+    
+    permissions: 
+      contents: read
+      actions: read
+      checks: write
+    
+    steps:
+      - name: Publish test results
+        uses: dorny/test-reporter@v1.8.0
+        with:
+          artifact: test-results
+          name: XUnit Tests
+          path: '*.trx'
+          reporter: dotnet-trx
