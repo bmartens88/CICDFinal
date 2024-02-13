@@ -1,0 +1,25 @@
+name: Make Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  semantic_version:
+    name: Determine release version no.
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - name: Determine version
+        uses: TriPSs/conventional-changelog-action@v5.2.0
+        with:
+          skip-commit: true
+          tag-prefix: ''
+        id: changelog
+      - name: Create release ${{ steps.changelog.outputs.tag }}
+        uses: ncipollo/release-action@v1
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        with:
+          tag: ${{ steps.changelog.outputs.tag }}
+          name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
