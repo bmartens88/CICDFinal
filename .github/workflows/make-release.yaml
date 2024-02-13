@@ -7,6 +7,8 @@ jobs:
   semantic_version:
     name: Determine release version no.
     runs-on: 'ubuntu-latest'
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
