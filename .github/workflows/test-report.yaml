@@ -5,15 +5,15 @@ on:
     workflows: ['CI']
     types:
       - completed
+      
+permissions:
+  contents: read
+  actions: read
+  checks: write
         
 jobs:
   report:
     runs-on: 'ubuntu-latest'
-    
-    permissions: 
-      contents: read
-      actions: read
-      checks: write
     
     steps:
       - name: Publish test results
