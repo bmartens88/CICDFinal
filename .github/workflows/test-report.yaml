@@ -5,22 +5,26 @@ on:
     workflows: ['CI']
     types:
       - completed
+      
+permissions:
+  contents: read
+  actions: read
+  checks: write
         
 jobs:
   report:
     runs-on: 'ubuntu-latest'
     
-    permissions: 
-      contents: read
-      actions: read
-      checks: write
-    
     steps:
+      - name: Download test results
+        uses: actions/download-artifact@v4.1.2
+        with:
+          name: test-results
+        id: download
       - name: Publish test results
         uses: dorny/test-reporter@v1.8.0
         with:
-          artifact: test-results
           name: XUnit Tests
-          path: '*.trx'
+          path: ${{ steps.download.outputs.download-path }}/*.trx
           reporter: dotnet-trx
-          token: ${{ github.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
