@@ -1,0 +1,53 @@
+name: Generate and publish NuGet package
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Setup .NET NuGet dependency cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('lib/MyLibrary/MyLibrary.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget
+      - name: Build NuGet package
+        run: dotnet pack lib/MyLibrary/MyLibrary.csproj -c Release -p:PackageVersion=${{ github.event.release.tag_name }}
+      - name: Upload NuGet build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuGetPackage
+          path: lib/MyLibrary/bin/Release/
+        
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Download NuGet build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: NuGetPackage
+        id: download
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish NuGet package
+        run: dotnet nuget push ${{ steps.download.outputs.download-path }}/*.nupkg
